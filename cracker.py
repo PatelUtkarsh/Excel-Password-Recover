@@ -17,10 +17,9 @@ class Cracker:
         characters = string.ascii_letters + string.digits + '@#.'
         # characters = string.digits
         # Generate and process each combination one by one
-        for length in range(1, 13):
-            for combination in itertools.product(characters, length):
-                combination_str = ''.join(combination)
-                password_guess = combination_str
+        for le in range(1, 13):
+            for combination in itertools.product(characters, repeat=le):
+                password_guess = ''.join(combination)
                 if self.__verbose:
                     print(f"Trying {password_guess}...")
                 guess = self.decrypt(str(password_guess))
