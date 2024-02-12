@@ -3,32 +3,30 @@ from random import randint
 import msoffcrypto
 import io
 import pandas as pd
-from manual_wordlist import MY_WORDLIST
+import itertools
+import string
 
 class Cracker:
     __passwords: list[str] = []
     __filename: str = ""
-    __wordlist: str = ""
-    __wordlist_length: int = len(MY_WORDLIST)
     __verbose: bool = True
-    __wordlist_pointer: int = 0
 
-    def __init__(self, filename, verbose, wordlist="default"):
+    def __init__(self, filename, verbose):
         self.__filename = filename
         self.__verbose = verbose
-        if wordlist == "default":
-            self.__passwords = MY_WORDLIST
-        else:
-            self.__wordlist = wordlist
-            self.read_password_list()
-        while (self.__wordlist_pointer < self.__wordlist_length):
-           password_guess = self.get_password()
-           if self.__verbose:
-                print(f"Trying {password_guess}...")
-           guess = self.decrypt(str(password_guess))
-           if (guess):
-                self.success(password_guess)
-                return
+        characters = string.ascii_letters + string.digits + '@#.'
+        # characters = string.digits
+        # Generate and process each combination one by one
+        for length in range(1, 13):
+            for combination in itertools.product(characters, length):
+                combination_str = ''.join(combination)
+                password_guess = combination_str
+                if self.__verbose:
+                    print(f"Trying {password_guess}...")
+                guess = self.decrypt(str(password_guess))
+                if (guess):
+                    self.success(password_guess)
+                    return
         self.end()
 
     def decrypt(self, password) -> bool:
@@ -36,7 +34,7 @@ class Cracker:
             decrypted = io.BytesIO()
             with open(self.__filename, "rb") as f:
                 file = msoffcrypto.OfficeFile(f)
-                file.load_key(password=password) 
+                file.load_key(password=password)
                 file.decrypt(decrypted)
             return True
         except:
@@ -47,27 +45,10 @@ class Cracker:
         decrypted = io.BytesIO()
         with open(self.__filename, "rb") as f:
             file = msoffcrypto.OfficeFile(f)
-            file.load_key(password=correct_password) 
+            file.load_key(password=correct_password)
             file.decrypt(decrypted)
         df = pd.read_excel(decrypted)
         print(df)
-
-    def get_password(self) -> str:
-        self.__wordlist_pointer+=1
-        return self.__passwords[self.__wordlist_pointer-1]
-
-    def get_random_password(self) -> str:
-        index = self.random_index()
-        return self.__passwords[index]
-
-    def read_password_list(self) -> None:
-        with open(self.__wordlist, "r") as f:
-            for line in f:
-                self.__passwords.append(line.rstrip('\n'))
-        self.__wordlist_length = len(self.__passwords)
-
-    def random_index(self) -> int:
-        return randint(0,self.__wordlist_length)
 
     def end(self) -> None:
         print(f"No password found :(")
